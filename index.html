@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Receipts</title>
+  <meta name="description" content="A premium retro Pomodoro and task manager that prints your focus sessions as receipts on a metallic tray. Complete with webcam thermal filters, sign-off signatures, and draggable stacked receipts.">
+  <link rel="icon" type="image/png" href="image/favicon.svg">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Loading / Printer Boot Screen -->
+  <div id="loading-screen" class="overlay-screen">
+    <div class="loading-container">
+      <h1 class="loading-title">TASK RECEIPTS</h1>
+      <div class="printer-slit">
+        <div id="loading-receipt" class="receipt-paper loading-print">
+          <div class="receipt-header">
+            <h2>TASK RECEIPTS</h2>
+            <p class="receipt-subtitle">WARMING UP THE PRESS</p>
+          </div>
+          <div class="divider-dashed"></div>
+          
+          <!-- Loading Progress Grid -->
+          <div class="loading-grid" id="loading-progress-grid">
+            <!-- 5x5 grid of squares, filled in by JS -->
+          </div>
+          
+          <div class="divider-dashed"></div>
+          <p class="receipt-footer status-text animate-pulse" id="loading-status">PRINTING...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Layout -->
+  <main id="app-container" class="main-layout hidden">
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="header-logo" id="app-logo">
+        <span class="material-symbols-outlined logo-icon">receipt_long</span>
+        <span class="logo-text font-receipt">TASK RECEIPTS</span>
+      </div>
+      
+      <div class="header-session-info">
+        <span class="session-label">SESSION:</span>
+        <input type="text" id="session-name-input" value="UNTITLED" title="Click to rename session" placeholder="UNTITLED" class="session-input">
+      </div>
+
+      <div class="header-controls">
+        <a href="#" id="help-trigger-btn" class="credits-link font-mono">FAQ & Help</a>
+        <button id="sound-toggle-btn" class="icon-btn-toggle" title="Toggle Sound FX">
+          <!-- Audio On Icon -->
+          <svg class="icon-sound-on" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <!-- Audio Off Icon -->
+          <svg class="icon-sound-off hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+      <!-- Left Column: Focus Controls & Planner -->
+      <section class="left-column">
+        <!-- Timer Controller Panel (Casio-Style LCD card) -->
+        <div class="card timer-card" id="timer-control-panel">
+          <div class="timer-display-wrapper">
+            <!-- LCD Header Status -->
+            <div class="lcd-header font-mono" id="timer-task-status">Choose next task</div>
+            
+            <div class="lcd-time-row">
+              <span class="timer-digits" id="timer-minutes">00</span>
+              <span class="timer-separator">:</span>
+              <span class="timer-digits" id="timer-seconds">00</span>
+            </div>
+
+            <!-- LCD Footer Breakers -->
+            <div class="lcd-footer font-mono" id="timer-breaks-count">0 breaks taken</div>
+          </div>
+
+          <div class="timer-actions">
+            <!-- Start / Play Button -->
+            <button id="timer-play-btn" class="action-btn timer-btn" title="Start Task Timer">
+              <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+            </button>
+
+            <!-- Pause Button -->
+            <button id="timer-pause-btn" class="action-btn timer-btn" title="Pause / Take a Break">
+              <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+            </button>
+
+            <!-- Mark task complete Button -->
+            <button id="timer-complete-btn" class="action-btn timer-btn" title="Complete Active Task">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Task Planner Panel (Filter pill categorized list) -->
+        <div class="card tasks-card">
+          <div class="tasks-header">
+            <div class="tasks-header-left">
+              <h3>TASK LIST</h3>
+              <button id="add-task-toggle-btn" class="icon-btn-plus" title="Add New Task" aria-label="Add New Task">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Ongoing/Done Pill Categorizers -->
+            <div class="task-tabs">
+              <button id="tab-ongoing" class="task-tab-btn active">ongoing</button>
+              <button id="tab-done" class="task-tab-btn">done</button>
+            </div>
+          </div>
+
+          <!-- New Task Input Field (toggles open) -->
+          <div id="new-task-form-container" class="task-form-wrapper hidden">
+            <input type="text" id="task-input" placeholder="What are you working on?" maxlength="40">
+            <div class="task-form-actions">
+              <button id="cancel-task-btn" class="btn-text">Cancel</button>
+              <button id="submit-task-btn" class="btn-filled">Add</button>
+            </div>
+          </div>
+
+          <ul id="tasks-list" class="tasks-list">
+            <!-- Dynamically populated tasks -->
+            <li class="empty-state">No tasks created. Add one above!</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Right Column: Metallic Sheet & Active Receipt -->
+      <section class="right-column">
+        <!-- 3D Metallic Tray -->
+        <div class="metal-tray" id="active-printer-tray">
+          <div class="tray-screws top-left"></div>
+          <div class="tray-screws top-right"></div>
+          <div class="tray-screws bottom-left"></div>
+          <div class="tray-screws bottom-right"></div>
+          
+          <div class="tray-rim">
+            <!-- Printer Slot from which the timeline slides -->
+            <div class="printer-feed-slot">
+              <div class="printer-shadow"></div>
+              
+              <!-- Live timeline progress strip protruding from top slot -->
+              <div id="timeline-receipt-strip" class="receipt-paper timeline-strip hidden">
+                <div class="strip-content font-receipt">
+                  <div class="timeline-visual-row" id="live-timeline-blocks">
+                    <!-- Live timeline blocks injected by JS -->
+                  </div>
+                  <div class="timeline-text-row">
+                    <span id="live-timeline-range-text">--:-- Start ---&gt;</span>
+                    <span>1 square = 1 mins</span>
+                  </div>
+                </div>
+                <div class="paper-edge-tear bottom"></div>
+              </div>
+            </div>
+
+            <!-- Active focus receipt paper inside the center tray -->
+            <div id="active-receipt-paper" class="receipt-paper task-receipt printed-feed shadow-lg hidden">
+              <div class="paper-edge-tear top"></div>
+
+              <div class="receipt-header center-align">
+                <h2 class="task-receipt-title" id="active-receipt-header-title">TASK RECIPETS</h2>
+                <p class="task-receipt-subtitle" id="active-receipt-task-title">make mochi</p>
+                <div class="task-receipt-timestamp" id="active-receipt-timestamp">6/8/2026, 5:44:35 PM</div>
+              </div>
+
+              <div class="divider-dashed"></div>
+
+              <!-- Sign-off placeholder or actual captured signature/webcam print -->
+              <div class="receipt-signoff-section" id="active-receipt-signoff-area">
+                <!-- Placeholder while working: "Pending Sign-off..." -->
+                <div class="signoff-placeholder font-receipt" id="active-receipt-signoff-placeholder">
+                  [ PENDING SIGN-OFF ]
+                </div>
+                
+                <!-- Printed signature/webcam photo once completed -->
+                <div class="signoff-printed hidden" id="active-receipt-signoff-printed">
+                  <canvas id="active-receipt-signoff-canvas" width="280" height="180"></canvas>
+                </div>
+              </div>
+
+              <!-- Mini timeline area shown only when completed -->
+              <div id="active-receipt-timeline-mini" class="receipt-timeline-mini hidden">
+                <div class="divider-dashed"></div>
+                <div class="mini-timeline-row">
+                  <span id="active-receipt-mini-blocks" class="mini-blocks"></span>
+                  <span id="active-receipt-mini-endtime" class="mini-endtime"></span>
+                  <span class="mini-focus-percent">100% on task</span>
+                </div>
+                <div class="mini-quote">
+                  "Done is the new tomorrow."
+                </div>
+                <div class="mini-meta-row">
+                  <span id="active-receipt-mini-starttime" class="mini-starttime"></span>
+                  <span class="mini-scale">1 square = 1 minutes</span>
+                </div>
+              </div>
+
+              <div class="paper-edge-tear bottom"></div>
+            </div>
+
+            <!-- Rounded Pill Session Summary button floating at tray bottom -->
+            <div class="session-summary-btn-wrapper">
+              <button id="session-summary-trigger-btn" class="session-summary-btn" disabled>
+                Session summary
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </div>
+    <footer class="app-footer font-mono">
+      created by <a href="https://github.com/ssanjanasharma" target="_blank" class="credits-link">sanjana</a>
+    </footer>
+  </main>
+
+  <!-- Session Summary Overlay Page (Draggable Board) -->
+  <section id="summary-screen" class="overlay-screen hidden">
+    <!-- Summary Navigation Header -->
+    <nav class="summary-nav">
+      <div class="nav-left">
+        <button id="summary-back-btn" class="nav-back-btn">
+          ← Back to app
+        </button>
+        <button id="summary-end-btn" class="nav-end-btn" title="Reset current timers and clear session data">
+          End session
+        </button>
+      </div>
+      <h2 class="summary-nav-title">SESSION SUMMARY</h2>
+      <div class="nav-right">
+        <button id="summary-history-btn" class="nav-history-btn">
+          See all receipts (<span id="saved-receipts-count">0</span>) →
+        </button>
+      </div>
+    </nav>
+
+    <!-- Draggable Board containing Stacked Receipts -->
+    <div class="summary-workspace" id="summary-workspace">
+      <!-- Center metallic tray for current session receipts -->
+      <div class="metal-tray summary-tray" id="summary-tray">
+        <div class="tray-screws top-left"></div>
+        <div class="tray-screws top-right"></div>
+        <div class="tray-screws bottom-left"></div>
+        <div class="tray-screws bottom-right"></div>
+        <div class="tray-rim summary-tray-rim" id="summary-tray-rim"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sign-Off Pop-up Modal (Webcam Snap or Signature pad) -->
+  <div id="sign-off-modal" class="modal-overlay hidden">
+    <div class="modal-content signoff-modal-content">
+      <button id="signoff-modal-close-btn" class="modal-close-x" aria-label="Close modal">&times;</button>
+      
+      <div class="signoff-display-wrapper">
+        <!-- Camera/Webcam Preview screen -->
+        <div id="webcam-view-container" class="signoff-view">
+          <video id="webcam-video" autoplay playsinline muted></video>
+          <canvas id="webcam-dither-canvas" class="hidden" width="320" height="240"></canvas>
+          <button id="shutter-btn" class="shutter-btn" title="Capture Photo" aria-label="Capture Photo"></button>
+          <div id="camera-error-message" class="camera-error hidden font-receipt">
+            Webcam unavailable.<br>Please draw your signature instead!
+          </div>
+        </div>
+        
+        <!-- Signature Pad screen -->
+        <div id="signature-view-container" class="signoff-view hidden">
+          <canvas id="modal-signature-canvas" width="320" height="240"></canvas>
+        </div>
+      </div>
+      
+      <div class="signoff-modal-footer">
+        <!-- Toggle tabs for Photo / Hand drawn -->
+        <div class="signoff-mode-toggle">
+          <button id="toggle-photo-mode" class="toggle-pill active">Photo</button>
+          <button id="toggle-draw-mode" class="toggle-pill">Hand drawn</button>
+        </div>
+        
+        <!-- Capture/Clear Action -->
+        <button id="signoff-action-btn" class="signoff-action-circle" title="Retake Photo / Clear Canvas">
+          <!-- Refresh / Retake icon -->
+         <svg id="icon-retake" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
+            <path d="M339.5-108.5q-65.5-28.5-114-77t-77-114Q120-365 120-440h80q0 117 81.5 198.5T480-160q117 0 198.5-81.5T760-440q0-117-81.5-198.5T480-720h-6l62 62-56 58-160-160 160-160 56 58-62 62h6q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-440q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-80q-75 0-140.5-28.5Z"/>
+          </svg>
+          <!-- Trash icon -->
+          <svg id="icon-trash" class="hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+        
+        <!-- Sign off button -->
+        <button id="signoff-submit-btn" class="signoff-submit-pill">Sign off</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Session Confirmation Modal Dialog -->
+  <div id="end-session-modal" class="modal-overlay hidden">
+    <div class="modal-content confirmation-modal-content">
+      <h2>End session?</h2>
+      <p>
+        All tasks and receipts will be cleared. This can't be undone.
+      </p>
+      <div class="confirmation-actions">
+        <button id="end-session-cancel" class="confirm-btn cancel">Cancel</button>
+        <button id="end-session-confirm" class="confirm-btn delete">End session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saved Receipts History Modal Overlay -->
+  <div id="history-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="font-receipt">SAVED RECEIPTS LOG</h2>
+        <button id="close-history-btn" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="divider-dashed"></div>
+      <div class="modal-body">
+        <ul id="history-list" class="history-list">
+          <!-- Dynamically populated past receipts list -->
+          <li class="empty-state">No saved focus receipts yet.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help / FAQ Modal Overlay -->
+  <div id="help-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="font-receipt">HELP & FAQ</h2>
+        <button id="close-help-btn" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="divider-dashed"></div>
+      <div class="modal-body font-receipt" style="padding: 10px 0;">
+        <h3 style="margin-top: 8px; font-weight: bold;">How it works:</h3>
+        <p style="margin: 8px 0; line-height: 1.4;">1. Add a task to your list (only one active task is allowed at a time).</p>
+        <p style="margin: 8px 0; line-height: 1.4;">2. Select the task and click Play to start focusing.</p>
+        <p style="margin: 8px 0; line-height: 1.4;">3. Pause when you need a break.</p>
+        <p style="margin: 8px 0; line-height: 1.4;">4. Click Complete to sign off your session (via webcam snapshot or hand-drawn signature) and print your receipt.</p>
+        <p style="margin: 8px 0; line-height: 1.4;">5. Open "Session summary" to view, drag, and stack all your focus receipts on the metallic tray.</p>
+        
+        <h3 style="margin-top: 16px; font-weight: bold;">FAQ:</h3>
+        <p style="font-weight: bold; margin-top: 8px;">Q: Why can I only have one active task?</p>
+        <p style="margin: 4px 0 12px 0; line-height: 1.4;">A: To maintain focus! True focus means concentrating on one thing at a time.</p>
+        
+        <p style="font-weight: bold;">Q: How do I clear my session?</p>
+        <p style="margin: 4px 0 12px 0; line-height: 1.4;">A: Click "End session" on the summary screen. It will clear all tasks and history.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script src="app.js"></script>
+</body>
+</html>
